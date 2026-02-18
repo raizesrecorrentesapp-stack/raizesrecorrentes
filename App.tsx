@@ -1,4 +1,21 @@
 import React, { useState, useEffect } from 'react';
+
+// Debug: Catch global errors
+if (typeof window !== 'undefined') {
+  window.onerror = function (message, source, lineno, colno, error) {
+    console.error("Global Error:", message, error);
+    const root = document.getElementById('root');
+    if (root) {
+      root.innerHTML = `<div style="padding: 20px; color: white; background: red; font-family: sans-serif;">
+        <h1>App Crash</h1>
+        <p>${message}</p>
+        <pre>${error?.stack || ''}</pre>
+        <p>Check if all environment variables are set in Vercel.</p>
+      </div>`;
+    }
+    return false;
+  };
+}
 import { Screen, Client, Appointment } from './types';
 import Navigation from './components/Navigation';
 import Header from './components/Header';
