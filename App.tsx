@@ -173,6 +173,16 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await dataService.signOut();
+      setIsAuthenticated(false);
+      setCurrentScreen('dashboard');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   const selectedClient = clients.find(c => c.id === selectedClientId) || null;
 
   const renderScreen = () => {
@@ -204,7 +214,7 @@ const App: React.FC = () => {
           clients={clients}
         />
       );
-      case 'mais': return <MoreView onNavigate={setCurrentScreen} />;
+      case 'mais': return <MoreView onNavigate={setCurrentScreen} onLogout={handleLogout} />;
       case 'recorrencia': return <RecurrenceView clients={clients} studioName={userProfile.name} />;
       case 'metas': return <GoalsView />;
       case 'servicos': return (
@@ -222,6 +232,7 @@ const App: React.FC = () => {
           onToggleTheme={() => setIsDarkMode(!isDarkMode)}
           profile={userProfile}
           onUpdateProfile={setUserProfile}
+          onLogout={handleLogout}
         />
       );
       case 'ai-analysis': return <AIAnalysisView onClose={() => setCurrentScreen('dashboard')} onAction={() => { }} onNavigate={setCurrentScreen} />;

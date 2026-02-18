@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Screen } from '../types';
-import { 
-  Package, Target, RefreshCw, Scissors, 
-  Settings, ChevronRight, User, ShieldCheck, 
+import {
+  Package, Target, RefreshCw, Scissors,
+  Settings, ChevronRight, User, ShieldCheck,
   DollarSign, HelpCircle, Star, Sparkles,
   Smartphone, Bell, Zap, TrendingUp, ShieldAlert,
   ArrowRight, CreditCard, Lock, Fingerprint
@@ -11,11 +11,12 @@ import {
 
 interface MoreViewProps {
   onNavigate: (screen: Screen) => void;
+  onLogout: () => void;
 }
 
-const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
+const MoreView: React.FC<MoreViewProps> = ({ onNavigate, onLogout }) => {
   const sections = [
-    { 
+    {
       title: 'CRESCIMENTO DO NEGÓCIO',
       subtitle: 'Estratégia & Expansão',
       items: [
@@ -24,7 +25,7 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
         { id: 'recorrencia', label: 'IA de Retenção', icon: <RefreshCw size={20} />, desc: 'Clientes em risco e previsibilidade', color: 'text-blue-500' },
       ]
     },
-    { 
+    {
       title: 'CONTROLE OPERACIONAL',
       subtitle: 'Operação Diária',
       items: [
@@ -48,7 +49,7 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
           <p className="text-[11px] font-bold text-black/30 dark:text-white/20 uppercase tracking-widest">Evolua seu estúdio</p>
         </div>
         <div className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center border border-black/5 dark:border-white/5 shadow-inner">
-           <Smartphone size={20} className="text-black/20 dark:text-white/20" />
+          <Smartphone size={20} className="text-black/20 dark:text-white/20" />
         </div>
       </div>
 
@@ -63,7 +64,7 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
             <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-[40px] overflow-hidden shadow-sm card-shadow">
               {section.items.map((item, i) => (
                 <React.Fragment key={item.id + i}>
-                  <button 
+                  <button
                     onClick={() => onNavigate(item.id as Screen)}
                     className="w-full px-6 py-7 flex items-center justify-between active:bg-black/[0.02] dark:active:bg-white/[0.02] transition-colors group touch-manipulation"
                   >
@@ -96,31 +97,31 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
           <h4 className="text-[11px] font-black text-black dark:text-white tracking-[0.2em]">PROTEÇÃO DO NEGÓCIO</h4>
           <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.1em] opacity-60 italic">Segurança & Continuidade</p>
         </div>
-        
+
         <div className="grid grid-cols-1 gap-4">
           {/* Card Premium de Assinatura */}
           <button className="relative bg-gradient-to-br from-[#1a1a1a] to-[#0c0c0c] border border-white/10 rounded-[40px] p-7 text-left shadow-2xl overflow-hidden group active:scale-[0.98] transition-all">
-             <div className="absolute -right-6 -top-6 w-32 h-32 bg-bronze/10 rounded-full blur-3xl group-hover:bg-bronze/20 transition-colors"></div>
-             <div className="relative z-10 flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-bronze rounded-2xl flex items-center justify-center text-white shadow-lg shadow-bronze/20">
-                   <Star size={22} fill="currentColor" />
-                </div>
-                <div className="bg-bronze/10 border border-bronze/30 px-3 py-1 rounded-full">
-                   <span className="text-[9px] font-black text-bronze uppercase tracking-[0.2em]">Assinante Pro</span>
-                </div>
-             </div>
-             <div className="relative z-10 space-y-1">
-                <h5 className="text-lg font-black text-white uppercase tracking-tight">Assinatura Premium</h5>
-                <p className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-relaxed italic">Gerenciar plano e recursos ativos</p>
-             </div>
-             <div className="relative z-10 pt-4 flex items-center text-bronze text-[10px] font-black uppercase tracking-widest">
-                <span>Acessar Benefícios</span>
-                <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
-             </div>
+            <div className="absolute -right-6 -top-6 w-32 h-32 bg-bronze/10 rounded-full blur-3xl group-hover:bg-bronze/20 transition-colors"></div>
+            <div className="relative z-10 flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-bronze rounded-2xl flex items-center justify-center text-white shadow-lg shadow-bronze/20">
+                <Star size={22} fill="currentColor" />
+              </div>
+              <div className="bg-bronze/10 border border-bronze/30 px-3 py-1 rounded-full">
+                <span className="text-[9px] font-black text-bronze uppercase tracking-[0.2em]">Assinante Pro</span>
+              </div>
+            </div>
+            <div className="relative z-10 space-y-1">
+              <h5 className="text-lg font-black text-white uppercase tracking-tight">Assinatura Premium</h5>
+              <p className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-relaxed italic">Gerenciar plano e recursos ativos</p>
+            </div>
+            <div className="relative z-10 pt-4 flex items-center text-bronze text-[10px] font-black uppercase tracking-widest">
+              <span>Acessar Benefícios</span>
+              <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
           </button>
 
           {/* Card de Segurança */}
-          <button 
+          <button
             onClick={() => onNavigate('ajustes')}
             className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-[32px] p-6 flex items-center justify-between group active:scale-[0.98] transition-all"
           >
@@ -144,9 +145,9 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
           <h4 className="text-[11px] font-black text-black dark:text-white tracking-[0.2em]">CONFIGURAÇÃO DO ESTÚDIO</h4>
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.1em] opacity-60 italic">Identidade & Preferências</p>
         </div>
-        
+
         <div className="bg-white dark:bg-[#0a0a0a] border border-black/5 dark:border-white/5 rounded-[40px] overflow-hidden shadow-sm">
-          <button 
+          <button
             onClick={() => onNavigate('ajustes')}
             className="w-full px-6 py-6 flex items-center justify-between active:bg-black/[0.02] dark:active:bg-white/[0.02] transition-colors group"
           >
@@ -161,10 +162,10 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
             </div>
             <ChevronRight size={18} className="text-black/10" />
           </button>
-          
+
           <div className="h-px bg-black/[0.03] dark:bg-white/[0.03] mx-6"></div>
 
-          <button 
+          <button
             onClick={() => onNavigate('ajustes')}
             className="w-full px-6 py-6 flex items-center justify-between active:bg-black/[0.02] dark:active:bg-white/[0.02] transition-colors group"
           >
@@ -192,10 +193,10 @@ const MoreView: React.FC<MoreViewProps> = ({ onNavigate }) => {
           <div className="w-1 h-1 bg-black/20 dark:bg-white/20 rounded-full"></div>
           <button className="text-[9px] font-black uppercase tracking-widest">Legal</button>
           <div className="w-1 h-1 bg-black/20 dark:bg-white/20 rounded-full"></div>
-          <button className="text-[9px] font-black uppercase tracking-widest">Sair</button>
+          <button onClick={onLogout} className="text-[9px] font-black uppercase tracking-widest">Sair</button>
         </div>
         <p className="text-[8px] font-black uppercase tracking-[0.5em] text-center leading-relaxed italic">
-          RAÍZES RECORRENTES • BUSINESS CENTER v3.2<br/>
+          RAÍZES RECORRENTES • BUSINESS CENTER v3.2<br />
           GESTÃO QUE GERA LIBERDADE
         </p>
       </div>
