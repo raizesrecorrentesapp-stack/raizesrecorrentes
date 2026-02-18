@@ -5,7 +5,9 @@ import { Client, Service, Appointment } from '../types';
 import { GoogleGenAI } from "@google/genai";
 
 // Guideline: Always use a named parameter for the API key and use process.env.API_KEY directly.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getApiKey = () => {
+  return (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.API_KEY || '';
+};
 
 export const dataService = {
   // --- CLIENTES ---
@@ -152,6 +154,10 @@ export const dataService = {
   // --- IA ANALYTICS ---
   async generateAIInsight(context: string) {
     try {
+      const apiKey = getApiKey();
+      if (!apiKey) return "Configure sua chave de API para insights personalizados.";
+
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Analise estes dados de faturamento e agenda para uma trancista profissional. 
