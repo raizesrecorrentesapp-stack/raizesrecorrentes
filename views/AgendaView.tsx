@@ -1,16 +1,16 @@
 
 import React, { useState, useMemo } from 'react';
 import { MOCK_SERVICES } from '../constants';
-import { Appointment, Client } from '../types';
-import { 
-  ChevronRight, 
+import { Appointment, Client, Service } from '../types';
+import {
+  ChevronRight,
   ChevronLeft,
-  Calendar as CalendarIcon, 
-  Zap, 
-  Check, 
-  X, 
-  Clock, 
-  Plus, 
+  Calendar as CalendarIcon,
+  Zap,
+  Check,
+  X,
+  Clock,
+  Plus,
   Info,
   Search,
   TrendingUp,
@@ -22,17 +22,18 @@ type ViewMode = 'month' | 'week' | 'day';
 interface AgendaViewProps {
   clients: Client[];
   appointments: Appointment[];
+  services: Service[];
   onAddAppointment: (appt: Appointment, newClientData?: Partial<Client>) => void;
 }
 
-const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddAppointment }) => {
+const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services, onAddAppointment }) => {
   // Inicialização com a data real de hoje
   const now = new Date();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDay, setSelectedDay] = useState(now.getDate());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0-11
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -44,15 +45,16 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
   const [newAppt, setNewAppt] = useState({
     date: new Date().toISOString().split('T')[0],
     time: '09:00',
-    serviceId: MOCK_SERVICES[0].id
+    serviceId: services[0]?.id || ''
   });
 
   // Fix: Added missing handleConfirmAdd function
   const handleConfirmAdd = () => {
     if (!clientSearch) return;
 
-    const service = MOCK_SERVICES.find(s => s.id === newAppt.serviceId) || MOCK_SERVICES[0];
-    
+    const service = services.find(s => s.id === newAppt.serviceId) || services[0];
+    if (!service) return; // Não permite sem serviço
+
     const appt: Appointment = {
       id: `a-${Date.now()}`,
       clientId: `c-${Date.now()}`,
@@ -95,11 +97,11 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
     const monthStr = (month + 1).toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
     const dateKey = `${year}-${monthStr}-${dayStr}`;
-    
-    const dayAppts = appointments.filter(a => a.date === dateKey); 
+
+    const dayAppts = appointments.filter(a => a.date === dateKey);
     const revenue = dayAppts.reduce((acc, a) => acc + a.value, 0);
     const materialCost = dayAppts.reduce((acc, a) => {
-      const s = MOCK_SERVICES.find(s => s.id === a.serviceId);
+      const s = services.find(s => s.id === a.serviceId);
       return acc + (s?.materialCost || 0);
     }, 0);
     const profit = revenue - materialCost;
@@ -135,19 +137,19 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
         <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl"></div>
         <div className="space-y-4 relative z-10">
           <div className="flex justify-between items-start">
-             <div className="space-y-1">
-                <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Resumo de {selectedDay}/{selectedMonth + 1}</p>
-                <h3 className="text-2xl font-black text-white tracking-tighter italic">Receita: R$ {dailyStats.revenue}</h3>
-             </div>
-             {dailyStats.count > 0 && (
-               <div className="bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase italic">Dia Forte 🔥</span>
-               </div>
-             )}
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Resumo de {selectedDay}/{selectedMonth + 1}</p>
+              <h3 className="text-2xl font-black text-white tracking-tighter italic">Receita: R$ {dailyStats.revenue}</h3>
+            </div>
+            {dailyStats.count > 0 && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                <span className="text-[10px] font-black text-emerald-500 uppercase italic">Dia Forte 🔥</span>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
-             <div><p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Lucro Est.</p><p className="text-sm font-black text-emerald-500">R$ {dailyStats.profit}</p></div>
-             <div className="border-l border-white/5 pl-3"><p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Atendimentos</p><p className="text-sm font-black text-white">{dailyStats.count}</p></div>
+            <div><p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Lucro Est.</p><p className="text-sm font-black text-emerald-500">R$ {dailyStats.profit}</p></div>
+            <div className="border-l border-white/5 pl-3"><p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Atendimentos</p><p className="text-sm font-black text-white">{dailyStats.count}</p></div>
           </div>
         </div>
       </div>
@@ -175,12 +177,12 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
           </div>
         )) : (
           <div className="py-20 text-center flex flex-col items-center space-y-4 opacity-20">
-             <CalendarIcon size={48} />
-             <p className="text-sm font-black uppercase tracking-widest italic">Nenhum atendimento<br/>neste dia</p>
+            <CalendarIcon size={48} />
+            <p className="text-sm font-black uppercase tracking-widest italic">Nenhum atendimento<br />neste dia</p>
           </div>
         )}
       </div>
-      
+
       <div className="pt-2 pb-10">
         <button onClick={() => setShowAddModal(true)} className="w-full py-5 bg-bronze text-white rounded-2xl font-black text-sm flex items-center justify-center space-x-3 shadow-xl active:scale-95 transition-transform uppercase tracking-[0.2em]">
           <Plus size={20} />
@@ -200,13 +202,13 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
         const d = new Date(selectedYear, selectedMonth, selectedDay + i);
         const stats = getDayStats(d.getDate(), d.getMonth(), d.getFullYear());
         return (
-          <button 
+          <button
             key={i}
-            onClick={() => { 
-              setSelectedDay(d.getDate()); 
-              setSelectedMonth(d.getMonth()); 
-              setSelectedYear(d.getFullYear()); 
-              setViewMode('day'); 
+            onClick={() => {
+              setSelectedDay(d.getDate());
+              setSelectedMonth(d.getMonth());
+              setSelectedYear(d.getFullYear());
+              setViewMode('day');
             }}
             className={`w-full bg-white dark:bg-[#0a0a0a] rounded-[28px] p-5 border flex items-center justify-between transition-all active:scale-[0.98] ${selectedDay === d.getDate() && selectedMonth === d.getMonth() ? 'border-bronze ring-1 ring-bronze/20 shadow-lg' : 'border-black/5 dark:border-white/5 shadow-sm'}`}
           >
@@ -231,7 +233,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
     const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1);
     const startingDayOfWeek = firstDayOfMonth.getDay();
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    
+
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const blanks = Array.from({ length: startingDayOfWeek }, (_, i) => i);
 
@@ -254,7 +256,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
               });
               const isSelected = selectedDay === d;
               return (
-                <button 
+                <button
                   key={d}
                   onClick={() => { setSelectedDay(d); setViewMode('day'); }}
                   className={`h-11 rounded-xl flex flex-col items-center justify-center transition-all relative ${isSelected ? 'bg-bronze text-white shadow-lg' : 'hover:bg-black/5 dark:hover:bg-white/5 text-black/60 dark:text-white/60'}`}
@@ -287,24 +289,23 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                viewMode === mode ? 'bg-bronze text-white shadow-md' : 'text-black/30 dark:text-white/20'
-              }`}
+              className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === mode ? 'bg-bronze text-white shadow-md' : 'text-black/30 dark:text-white/20'
+                }`}
             >
               {mode === 'month' ? 'Mês' : mode === 'week' ? 'Semana' : 'Dia'}
             </button>
           ))}
         </div>
-        
+
         {/* DISPLAY MMM/AAAA COM SELETOR */}
-        <button 
+        <button
           onClick={() => setShowDatePicker(true)}
           className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-black/[0.03] dark:bg-white/5 active:scale-95 transition-all group"
         >
-           <span className="text-[11px] font-black uppercase tracking-widest text-black dark:text-white">
-             {months[selectedMonth]}/{selectedYear}
-           </span>
-           <CalendarDays size={14} className="text-bronze group-hover:rotate-12 transition-transform" />
+          <span className="text-[11px] font-black uppercase tracking-widest text-black dark:text-white">
+            {months[selectedMonth]}/{selectedYear}
+          </span>
+          <CalendarDays size={14} className="text-bronze group-hover:rotate-12 transition-transform" />
         </button>
       </div>
 
@@ -312,16 +313,16 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
         {viewMode === 'day' && (
           <div className="bg-white/90 dark:bg-[#0c0c0c]/90 py-2 border-b border-black/5 dark:border-white/5 sticky top-0 z-10">
             <div className="flex items-center justify-between px-2">
-              <button 
+              <button
                 onClick={handlePrevDay}
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/5 text-bronze active:scale-90 transition-transform"
               >
                 <ChevronLeft size={20} strokeWidth={3} />
               </button>
-              
+
               <div className="flex items-center space-x-1 overflow-x-hidden py-1">
                 {dynamicDays.map((day, idx) => (
-                  <button 
+                  <button
                     key={idx}
                     onClick={() => {
                       setSelectedDay(day.date);
@@ -340,7 +341,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
                 ))}
               </div>
 
-              <button 
+              <button
                 onClick={handleNextDay}
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/5 text-bronze active:scale-90 transition-transform"
               >
@@ -361,17 +362,17 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md animate-in fade-in" onClick={() => setShowDatePicker(false)}></div>
           <div className="bg-white dark:bg-[#0c0c0c] border-t border-black/10 dark:border-white/10 w-full rounded-t-[40px] p-8 pb-12 space-y-8 relative z-10 animate-in slide-in-from-bottom duration-500 shadow-2xl">
             <div className="w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full mx-auto mb-2 shrink-0"></div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <button 
+                <button
                   onClick={() => setSelectedYear(prev => prev - 1)}
                   className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-black/40 dark:text-white/40 active:scale-90"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <h3 className="text-3xl font-black text-black dark:text-white tracking-tighter italic">{selectedYear}</h3>
-                <button 
+                <button
                   onClick={() => setSelectedYear(prev => prev + 1)}
                   className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-black/40 dark:text-white/40 active:scale-90"
                 >
@@ -390,19 +391,18 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
                   <button
                     key={m}
                     onClick={() => handleMonthSelect(idx)}
-                    className={`h-16 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border ${
-                      isSelected 
-                      ? 'bg-bronze border-bronze text-white shadow-lg shadow-bronze/30 scale-105' 
+                    className={`h-16 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border ${isSelected
+                      ? 'bg-bronze border-bronze text-white shadow-lg shadow-bronze/30 scale-105'
                       : 'bg-black/5 dark:bg-white/5 border-transparent text-black/40 dark:text-white/20'
-                    }`}
+                      }`}
                   >
                     {m}
                   </button>
                 );
               })}
             </div>
-            
-            <button 
+
+            <button
               onClick={() => {
                 setSelectedDay(now.getDate());
                 setSelectedMonth(now.getMonth());
@@ -437,17 +437,17 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, onAddApp
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {/* Fix: Added onChange handlers to update newAppt state */}
-                <input 
-                  type="date" 
-                  value={newAppt.date} 
+                <input
+                  type="date"
+                  value={newAppt.date}
                   onChange={(e) => setNewAppt(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full h-14 bg-black/5 rounded-2xl px-5 font-bold" 
+                  className="w-full h-14 bg-black/5 rounded-2xl px-5 font-bold"
                 />
-                <input 
-                  type="time" 
-                  value={newAppt.time} 
+                <input
+                  type="time"
+                  value={newAppt.time}
                   onChange={(e) => setNewAppt(prev => ({ ...prev, time: e.target.value }))}
-                  className="w-full h-14 bg-black/5 rounded-2xl px-5 font-bold" 
+                  className="w-full h-14 bg-black/5 rounded-2xl px-5 font-bold"
                 />
               </div>
               <button onClick={() => handleConfirmAdd()} className="w-full py-5 bg-bronze text-white font-black text-sm rounded-2xl uppercase tracking-widest shadow-xl">Confirmar</button>

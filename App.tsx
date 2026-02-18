@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
     return false;
   };
 }
-import { Screen, Client, Appointment } from './types';
+import { Client, Screen, Appointment, Service } from './types';
 import Navigation from './components/Navigation';
 import Header from './components/Header';
 import DashboardView from './views/DashboardView';
@@ -43,6 +43,7 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [financeFilter, setFinanceFilter] = useState<string>('');
@@ -58,12 +59,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [fetchedClients, fetchedAppointments] = await Promise.all([
+        const [fetchedClients, fetchedAppointments, fetchedServices] = await Promise.all([
           dataService.getClients(),
-          dataService.getAppointments()
+          dataService.getAppointments(),
+          dataService.getServices()
         ]);
         setClients(fetchedClients);
         setAppointments(fetchedAppointments);
+        setServices(fetchedServices);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -158,11 +161,12 @@ const App: React.FC = () => {
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'dashboard': return <DashboardView onNavigate={setCurrentScreen} />;
+      case 'dashboard': return <DashboardView onNavigate={setCurrentScreen} clients={clients} appointments={appointments} />;
       case 'agenda': return (
         <AgendaView
           clients={clients}
           appointments={appointments}
+          services={services}
           onAddAppointment={handleAddAppointment}
         />
       );
@@ -181,6 +185,7 @@ const App: React.FC = () => {
           onSelectClient={handleSelectClient}
           initialFilter={financeFilter}
           onClearFilter={() => setFinanceFilter('')}
+          clients={clients}
         />
       );
       case 'mais': return <MoreView onNavigate={setCurrentScreen} />;
@@ -190,6 +195,8 @@ const App: React.FC = () => {
         <ServicesView
           onNavigate={setCurrentScreen}
           onSetFinanceFilter={setFinanceFilter}
+          services={services}
+          onUpdateServices={() => dataService.getServices().then(setServices)}
         />
       );
       case 'estoque': return <InventoryView />;
@@ -204,7 +211,7 @@ const App: React.FC = () => {
       case 'ai-analysis': return <AIAnalysisView onClose={() => setCurrentScreen('dashboard')} onAction={() => { }} onNavigate={setCurrentScreen} />;
       case 'alertas': return <AlertsView onBack={() => setCurrentScreen('dashboard')} onNavigate={setCurrentScreen} />;
       case 'previsao': return <WeeklyForecastView onBack={() => setCurrentScreen('dashboard')} onNavigate={setCurrentScreen} />;
-      default: return <DashboardView onNavigate={setCurrentScreen} />;
+      default: return <DashboardView onNavigate={setCurrentScreen} clients={clients} appointments={appointments} />;
     }
   };
 

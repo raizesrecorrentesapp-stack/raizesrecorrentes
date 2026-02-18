@@ -1,26 +1,41 @@
 
 import React, { useMemo, useState } from 'react';
 import { MOCK_TRANSACTIONS, MOCK_SERVICES, MOCK_CLIENTS } from '../constants';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Scissors, 
-  Target, 
-  DollarSign, 
-  ThumbsUp, 
-  Plus, 
-  ArrowRight, 
-  X, 
-  Star, 
-  Settings2 
+import {
+  TrendingUp,
+  TrendingDown,
+  Scissors,
+  Target,
+  DollarSign,
+  ThumbsUp,
+  Plus,
+  ArrowRight,
+  X,
+  Star,
+  Settings2
 } from 'lucide-react';
+import { Client, Screen } from '../types';
 
 type FinanceTab = 'resultado' | 'fluxo';
 
-const FinanceView: React.FC = () => {
+interface FinanceViewProps {
+  onNavigate?: (screen: Screen) => void;
+  initialFilter?: string;
+  onClearFilter?: () => void;
+  clients: Client[];
+  onSelectClient?: (id: string) => void;
+}
+
+const FinanceView: React.FC<FinanceViewProps> = ({
+  onNavigate,
+  initialFilter,
+  onClearFilter,
+  clients,
+  onSelectClient
+}) => {
   const [activeTab, setActiveTab] = useState<FinanceTab>('resultado');
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
-  
+
   const [contas, setContas] = useState({
     aluguel: 800,
     luz: 150,
@@ -40,22 +55,22 @@ const FinanceView: React.FC = () => {
   }, [totalContas]);
 
   const topClients = useMemo(() => {
-    return [...MOCK_CLIENTS].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 3);
-  }, []);
+    return clients.length > 0 ? [...clients].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 3) : [];
+  }, [clients]);
 
   return (
     <div className="animate-in fade-in duration-500 pb-40">
-      
+
       {/* 🧭 SELETOR DE ABA (Sticky) */}
       <div className="sticky top-0 z-30 bg-[#f5f5f7]/95 dark:bg-[#0c0c0c]/95 backdrop-blur-md px-4 py-4 border-b border-black/5 dark:border-white/5">
         <div className="bg-black/5 dark:bg-white/5 p-1 rounded-2xl flex items-center">
-          <button 
+          <button
             onClick={() => setActiveTab('resultado')}
             className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'resultado' ? 'bg-white dark:bg-[#121212] text-bronze shadow-sm' : 'text-black/30 dark:text-white/30'}`}
           >
             Meu Resultado
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('fluxo')}
             className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'fluxo' ? 'bg-white dark:bg-[#121212] text-bronze shadow-sm' : 'text-black/30 dark:text-white/30'}`}
           >
@@ -87,51 +102,51 @@ const FinanceView: React.FC = () => {
             <section className="px-1">
               <div className="bg-white dark:bg-[#121212] border border-black/5 dark:border-white/5 rounded-[28px] p-5 flex items-center justify-between shadow-sm">
                 <div className="flex items-center space-x-4">
-                   <div className="w-10 h-10 rounded-full bg-bronze/10 flex items-center justify-center text-bronze">
-                      <Target size={18} />
-                   </div>
-                   <div className="space-y-0.5">
-                      <p className="text-[11px] font-black text-black dark:text-white uppercase tracking-tight leading-none">Pagar as contas do mês</p>
-                      <p className="text-[9px] font-bold text-black/40 dark:text-white/20 uppercase tracking-widest">Faltam 4 atendimentos</p>
-                   </div>
+                  <div className="w-10 h-10 rounded-full bg-bronze/10 flex items-center justify-center text-bronze">
+                    <Target size={18} />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-[11px] font-black text-black dark:text-white uppercase tracking-tight leading-none">Pagar as contas do mês</p>
+                    <p className="text-[9px] font-bold text-black/40 dark:text-white/20 uppercase tracking-widest">Faltam 4 atendimentos</p>
+                  </div>
                 </div>
                 <div className="flex space-x-1">
-                   {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-bronze"></div>)}
-                   <div className="w-1.5 h-1.5 rounded-full bg-black/5 dark:bg-white/10"></div>
+                  {[1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-bronze"></div>)}
+                  <div className="w-1.5 h-1.5 rounded-full bg-black/5 dark:bg-white/10"></div>
                 </div>
               </div>
             </section>
 
             {/* 💎 AS TOP DO MÊS */}
             <section className="space-y-4">
-               <div className="flex items-center space-x-2 px-1">
-                  <Star size={14} className="text-amber-500" fill="currentColor" />
-                  <h3 className="text-[11px] font-black text-black/30 dark:text-white/20 uppercase tracking-[0.3em]">As Top do Mês</h3>
-               </div>
-               <div className="grid grid-cols-1 gap-3">
-                  {topClients.map((client, idx) => (
-                    <div key={client.id} className="bg-white dark:bg-[#0a0a0a] p-4 rounded-[24px] border border-black/5 dark:border-white/5 flex items-center justify-between shadow-sm">
-                       <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 rounded-full border border-black/5 overflow-hidden">
-                             <img src={client.avatar} className="w-full h-full object-cover grayscale" alt={client.name} />
-                          </div>
-                          <div>
-                             <h4 className="font-black text-sm text-black dark:text-white uppercase leading-none mb-1">{client.name}</h4>
-                             <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Gerou R$ {client.totalSpent} de lucro</p>
-                          </div>
-                       </div>
-                       <div className="w-7 h-7 rounded-lg bg-black/[0.02] dark:bg-white/5 flex items-center justify-center text-bronze">
-                          <span className="text-[10px] font-black">#{idx + 1}</span>
-                       </div>
+              <div className="flex items-center space-x-2 px-1">
+                <Star size={14} className="text-amber-500" fill="currentColor" />
+                <h3 className="text-[11px] font-black text-black/30 dark:text-white/20 uppercase tracking-[0.3em]">As Top do Mês</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {topClients.map((client, idx) => (
+                  <div key={client.id} className="bg-white dark:bg-[#0a0a0a] p-4 rounded-[24px] border border-black/5 dark:border-white/5 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 rounded-full border border-black/5 overflow-hidden">
+                        <img src={client.avatar} className="w-full h-full object-cover grayscale" alt={client.name} />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-sm text-black dark:text-white uppercase leading-none mb-1">{client.name}</h4>
+                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Gerou R$ {client.totalSpent} de lucro</p>
+                      </div>
                     </div>
-                  ))}
-               </div>
+                    <div className="w-7 h-7 rounded-lg bg-black/[0.02] dark:bg-white/5 flex items-center justify-center text-bronze">
+                      <span className="text-[10px] font-black">#{idx + 1}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </section>
 
             {/* 🏠 CONTAS DO ESTÚDIO */}
             <section className="space-y-4">
               <h3 className="text-[11px] font-black text-black/30 dark:text-white/20 uppercase tracking-[0.3em] px-1">Resumo das Despesas Fixas</h3>
-              <button 
+              <button
                 onClick={() => setIsAccountsModalOpen(true)}
                 className="w-full bg-white dark:bg-[#0a0a0a] p-6 rounded-[32px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between active:scale-[0.98] transition-all group"
               >
@@ -145,8 +160,8 @@ const FinanceView: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 text-bronze">
-                   <span className="text-[9px] font-black uppercase tracking-widest">Ver Contas</span>
-                   <Settings2 size={16} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Ver Contas</span>
+                  <Settings2 size={16} />
                 </div>
               </button>
             </section>
@@ -192,27 +207,27 @@ const FinanceView: React.FC = () => {
               <div className="flex items-center justify-between px-1">
                 <h3 className="text-[11px] font-black text-black/30 dark:text-white/20 uppercase tracking-[0.3em]">Histórico Mensal</h3>
                 <button className="text-[10px] font-black text-bronze uppercase tracking-widest flex items-center space-x-1">
-                   <Plus size={14} />
-                   <span>Novo Gasto</span>
+                  <Plus size={14} />
+                  <span>Novo Gasto</span>
                 </button>
               </div>
               <div className="space-y-3">
-                 {MOCK_TRANSACTIONS.map(t => (
-                   <div key={t.id} className="bg-white dark:bg-[#0a0a0a] p-5 rounded-[28px] border border-black/5 dark:border-white/5 flex items-center justify-between shadow-sm">
-                      <div className="flex items-center space-x-4">
-                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === 'RECEITA' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                            {t.type === 'RECEITA' ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-                         </div>
-                         <div>
-                            <h4 className="font-black text-sm text-black dark:text-white uppercase leading-none mb-1">{t.description}</h4>
-                            <p className="text-[9px] font-bold text-black/20 dark:text-white/20 uppercase tracking-widest">{t.date} • {t.category}</p>
-                         </div>
+                {MOCK_TRANSACTIONS.map(t => (
+                  <div key={t.id} className="bg-white dark:bg-[#0a0a0a] p-5 rounded-[28px] border border-black/5 dark:border-white/5 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === 'RECEITA' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                        {t.type === 'RECEITA' ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                       </div>
-                      <p className={`text-sm font-black ${t.type === 'RECEITA' ? 'text-emerald-500' : 'text-red-500'}`}>
-                         {t.type === 'RECEITA' ? '+' : '-'} R$ {t.value}
-                      </p>
-                   </div>
-                 ))}
+                      <div>
+                        <h4 className="font-black text-sm text-black dark:text-white uppercase leading-none mb-1">{t.description}</h4>
+                        <p className="text-[9px] font-bold text-black/20 dark:text-white/20 uppercase tracking-widest">{t.date} • {t.category}</p>
+                      </div>
+                    </div>
+                    <p className={`text-sm font-black ${t.type === 'RECEITA' ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {t.type === 'RECEITA' ? '+' : '-'} R$ {t.value}
+                    </p>
+                  </div>
+                ))}
               </div>
             </section>
           </div>
@@ -242,16 +257,16 @@ const FinanceView: React.FC = () => {
                   <label className="text-[10px] font-black text-black/30 dark:text-white/20 uppercase tracking-widest ml-1">{item.label}</label>
                   <div className="relative">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20" size={16} />
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={contas[item.key as keyof typeof contas]}
-                      onChange={(e) => setContas({...contas, [item.key]: Number(e.target.value)})}
-                      className="w-full h-14 bg-black/[0.03] dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl pl-12 pr-5 text-black dark:text-white font-black outline-none focus:border-bronze" 
+                      onChange={(e) => setContas({ ...contas, [item.key]: Number(e.target.value) })}
+                      className="w-full h-14 bg-black/[0.03] dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl pl-12 pr-5 text-black dark:text-white font-black outline-none focus:border-bronze"
                     />
                   </div>
                 </div>
               ))}
-              <button 
+              <button
                 onClick={() => setIsAccountsModalOpen(false)}
                 className="w-full py-5 bg-bronze text-white font-black text-lg rounded-[28px] shadow-xl active:scale-95 transition-all uppercase tracking-widest"
               >

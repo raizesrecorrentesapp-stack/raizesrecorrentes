@@ -1,6 +1,5 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { MOCK_CLIENTS, MOCK_SERVICES, MOCK_APPOINTMENTS } from '../constants';
 import { Client, Service, Appointment } from '../types';
 import { GoogleGenAI } from "@google/genai";
 
@@ -12,7 +11,7 @@ const getApiKey = () => {
 export const dataService = {
   // --- CLIENTES ---
   async getClients(): Promise<Client[]> {
-    if (!isSupabaseConfigured() || !supabase) return MOCK_CLIENTS;
+    if (!isSupabaseConfigured() || !supabase) return [];
 
     const { data, error } = await supabase
       .from('clients')
@@ -79,7 +78,7 @@ export const dataService = {
 
   // --- SERVIÇOS ---
   async getServices(): Promise<Service[]> {
-    if (!isSupabaseConfigured() || !supabase) return MOCK_SERVICES;
+    if (!isSupabaseConfigured() || !supabase) return [];
 
     const { data, error } = await supabase
       .from('services')
@@ -103,7 +102,7 @@ export const dataService = {
 
   // --- AGENDA ---
   async getAppointments(date?: string): Promise<Appointment[]> {
-    if (!isSupabaseConfigured() || !supabase) return MOCK_APPOINTMENTS;
+    if (!isSupabaseConfigured() || !supabase) return [];
 
     let query = supabase.from('appointments').select('*');
     if (date) query = query.eq('date', date);
