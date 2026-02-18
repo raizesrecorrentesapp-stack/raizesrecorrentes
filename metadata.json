@@ -1,0 +1,8 @@
+
+{
+  "name": "Raízes Recorrentes V3 - Professional",
+  "description": "Plataforma avançada de gestão para trancistas com inteligência de margem real, retenção de clientes e previsibilidade financeira.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
