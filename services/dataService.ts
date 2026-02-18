@@ -130,6 +130,12 @@ export const dataService = {
     };
   },
 
+  async deleteService(id: string): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) return;
+    const { error } = await supabase.from('services').delete().eq('id', id);
+    if (error) throw error;
+  },
+
   // --- AGENDA ---
   async getAppointments(date?: string): Promise<Appointment[]> {
     if (!isSupabaseConfigured() || !supabase) return [];

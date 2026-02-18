@@ -8,7 +8,7 @@ import {
   Award, Search, Filter, ChevronRight,
   BarChart4, X, AlertCircle, Info, Calculator,
   History, Scissors, Check, Save, Sparkles,
-  ArrowUpDown, Trophy, Timer
+  ArrowUpDown, Trophy, Timer, Trash2, Loader2
 } from 'lucide-react';
 
 interface ServicesViewProps {
@@ -27,6 +27,8 @@ const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onSetFinanceFil
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [simCount, setSimCount] = useState(20);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
@@ -118,6 +120,23 @@ const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onSetFinanceFil
     } catch (error) {
       console.error('Error saving service:', error);
       alert('Erro ao salvar serviço. Verifique sua conexão.');
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!selectedService) return;
+
+    setIsDeleting(true);
+    try {
+      await dataService.deleteService(selectedService.id);
+      await onUpdateServices();
+      setSelectedService(null);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      alert('Erro ao excluir serviço. Verifique se existem agendamentos vinculados a ele.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -498,6 +517,47 @@ const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onSetFinanceFil
               >
                 <History size={18} />
                 <span>Ver Histórico de Uso</span>
+              </button>
+
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full py-5 bg-red-500/5 border border-red-500/20 text-red-500 rounded-[24px] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center space-x-3 shadow-xl active:scale-95 transition-transform"
+              >
+                <Trash2 size={18} />
+                <span>Excluir Serviço</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⚠️ DELETE CONFIRMATION ALERT */}
+      {showDeleteConfirm && selectedService && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => !isDeleting && setShowDeleteConfirm(false)}></div>
+          <div className="bg-[#0c0c0c] border border-red-900/20 w-full max-w-xs rounded-[32px] p-8 space-y-8 relative z-10 animate-in zoom-in duration-300 shadow-2xl text-center">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mx-auto border border-red-500/20">
+              <AlertTriangle size={40} />
+            </div>
+            <div className="space-y-3">
+              <h4 className="text-2xl font-black text-white uppercase tracking-tight leading-none italic">Excluir?</h4>
+              <p className="text-sm text-white/40 leading-relaxed font-medium">Tem certeza que deseja apagar permanentemente o serviço <span className="text-white font-bold">{selectedService.name}</span>?</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleDeleteService}
+                disabled={isDeleting}
+                className="w-full py-5 bg-red-500 text-white font-black rounded-2xl active:scale-95 transition-transform uppercase tracking-widest text-xs flex items-center justify-center space-x-2"
+              >
+                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                <span>{isDeleting ? 'Excluindo...' : 'Confirmar Exclusão'}</span>
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="w-full py-5 bg-white/5 text-white/60 font-black rounded-2xl active:bg-white/10 transition-colors uppercase tracking-widest text-xs"
+              >
+                Cancelar
               </button>
             </div>
           </div>
