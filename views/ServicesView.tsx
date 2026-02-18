@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { dataService } from '../services/dataService';
 import { Service, Screen } from '../types';
 import { MOCK_SERVICES } from '../constants';
 import {
@@ -96,15 +97,28 @@ const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onSetFinanceFil
     }
   };
 
-  const handleSaveService = () => {
-    setShowSuccessToast(true);
-    setIsAddModalOpen(false);
-    setTimeout(() => setShowSuccessToast(false), 3000);
-    setNewService({
-      name: '', category: 'Tranças', duration: '2h', durationMinutes: 120,
-      price: 0, materialCost: 0, indirectCost: 0, repetition: '4 semanas',
-      description: '', tag: 'Popular'
-    });
+  const handleSaveService = async () => {
+    try {
+      if (!newService.name) {
+        alert('Por favor, digite o nome do serviço.');
+        return;
+      }
+
+      await dataService.updateService(newService as Service);
+      await onUpdateServices();
+
+      setShowSuccessToast(true);
+      setIsAddModalOpen(false);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+      setNewService({
+        name: '', category: 'Tranças', duration: '2h', durationMinutes: 120,
+        price: 0, materialCost: 0, indirectCost: 0, repetition: '4 semanas',
+        description: '', tag: 'Popular'
+      });
+    } catch (error) {
+      console.error('Error saving service:', error);
+      alert('Erro ao salvar serviço. Verifique sua conexão.');
+    }
   };
 
   const filterOptions = [

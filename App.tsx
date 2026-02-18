@@ -57,6 +57,22 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const session = await dataService.getSession();
+        if (session) {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      }
+    };
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const loadData = async () => {
       try {
         const [fetchedClients, fetchedAppointments, fetchedServices] = await Promise.all([
@@ -75,7 +91,7 @@ const App: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isDarkMode) {

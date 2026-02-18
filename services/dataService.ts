@@ -100,6 +100,36 @@ export const dataService = {
     }));
   },
 
+  async updateService(service: Service): Promise<Service> {
+    if (!isSupabaseConfigured() || !supabase) return service;
+
+    const dbService = {
+      id: service.id && !service.id.startsWith('s-') ? service.id : undefined,
+      name: service.name,
+      price: service.price,
+      duration: service.duration,
+      duration_minutes: service.durationMinutes,
+      material_cost: service.materialCost,
+      indirect_cost: service.indirectCost,
+      description: service.description,
+      category: service.category,
+      repetition: service.repetition,
+      image: service.image
+    };
+
+    const { data, error } = await supabase
+      .from('services')
+      .upsert(dbService)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return {
+      ...service,
+      id: data.id
+    };
+  },
+
   // --- AGENDA ---
   async getAppointments(date?: string): Promise<Appointment[]> {
     if (!isSupabaseConfigured() || !supabase) return [];
@@ -150,6 +180,12 @@ export const dataService = {
     };
   },
 
+  async deleteAppointment(id: string): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) return;
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) throw error;
+  },
+
   // --- IA ANALYTICS ---
   async generateAIInsight(context: string) {
     try {
@@ -171,6 +207,30 @@ export const dataService = {
       console.error("AI Insight Error:", e);
       return "Foque na retenção de clientes VIP este mês.";
     }
+  },
+
+  // --- AUTENTICAÇÃO ---
+  async signIn(email: string, password: string) {
+    if (!isSupabaseConfigured() || !supabase) {
+      throw new Error("Supabase não configurado.");
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async signOut() {
+    if (!isSupabaseConfigured() || !supabase) return;
+    await supabase.auth.signOut();
+  },
+
+  async getSession() {
+    if (!isSupabaseConfigured() || !supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
   }
 };
 
