@@ -71,6 +71,8 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
     setShowAddModal(false);
     setShowSuccessToast(true);
     setClientSearch('');
+    // Reset selection to first service for next use
+    setNewAppt(prev => ({ ...prev, serviceId: services[0]?.id || '' }));
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
@@ -450,7 +452,35 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
                   className="w-full h-14 bg-black/5 rounded-2xl px-5 font-bold"
                 />
               </div>
-              <button onClick={() => handleConfirmAdd()} className="w-full py-5 bg-bronze text-white font-black text-sm rounded-2xl uppercase tracking-widest shadow-xl">Confirmar</button>
+
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-black/20 uppercase tracking-widest ml-2">Serviço</label>
+                {services.length > 0 ? (
+                  <select
+                    value={newAppt.serviceId}
+                    onChange={(e) => setNewAppt(prev => ({ ...prev, serviceId: e.target.value }))}
+                    className="w-full h-14 bg-black/5 dark:bg-white/5 border border-black/10 rounded-2xl px-5 font-bold outline-none appearance-none cursor-pointer"
+                  >
+                    {services.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} - R$ {s.price}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                    <p className="text-[10px] font-black text-amber-500 uppercase italic">
+                      ⚠ Nenhum serviço cadastrado. Cadastre um serviço no Portfólio primeiro.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => handleConfirmAdd()}
+                disabled={!clientSearch || services.length === 0}
+                className={`w-full py-5 bg-bronze text-white font-black text-sm rounded-2xl uppercase tracking-widest shadow-xl transition-all ${(!clientSearch || services.length === 0) ? 'opacity-30 grayscale cursor-not-allowed' : 'active:scale-95'}`}
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>
