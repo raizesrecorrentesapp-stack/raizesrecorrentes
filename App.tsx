@@ -47,6 +47,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [financeFilter, setFinanceFilter] = useState<string>('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const [userProfile, setUserProfile] = useState({
     name: 'Preta Trancista',
@@ -145,37 +146,26 @@ const App: React.FC = () => {
 
   const handleAddAppointment = async (appt: Appointment, newClientData?: Partial<Client>) => {
     try {
-      if (newClientData) {
-        const newClient: Client = {
-          id: appt.clientId,
-          name: appt.clientName,
-          status: 'ATIVA',
-          lastVisit: appt.date,
-          frequency: '45 dias',
-          avgTicket: appt.value,
-          growth: 'Novo',
-          avatar: `https://picsum.photos/seed/${appt.clientId}/200`,
-          phone: '',
-          instagram: '',
-          totalSpent: appt.value,
-          totalVisits: 1,
-          history: [{
-            id: `h-${Date.now()}`,
-            date: appt.date,
-            service: appt.serviceName,
-            price: appt.value,
-            paymentMethod: 'Pendente'
-          }]
-        };
-        const savedClient = await dataService.updateClient(newClient);
-        setClients(prev => [...prev.filter(c => c.id !== appt.clientId), savedClient]);
-        appt.clientId = savedClient.id; // Garantir que usamos a UUID real do banco
-        appt.clientName = savedClient.name;
-      }
+      // O dataService.addAppointment agora cuida da criação automática do cliente
+      // se o clientId for um mock (começando com 'c-').
       const savedAppt = await dataService.addAppointment(appt);
+
+      // Atualizar lista de agendamentos
       setAppointments(prev => [...prev, savedAppt]);
+
+      // Se o clientId mudou (era mock e agora é UUID), significa que um cliente
+      // foi criado ou vinculado. Vamos recarregar os clientes para garantir
+      // que a aba de clientes esteja atualizada.
+      if (appt.clientId.startsWith('c-')) {
+        const fetchedClients = await dataService.getClients();
+        setClients(fetchedClients);
+      }
+
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (error) {
       console.error('Error saving appointment:', error);
+      alert("Erro ao criar agendamento. Verifique sua conexão.");
     }
   };
 
@@ -277,6 +267,14 @@ const App: React.FC = () => {
         </div>
       </main>
       <Navigation currentScreen={currentScreen} onNavigate={setCurrentScreen} isDark={isDarkMode} />
+
+      {/* Global Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[300] bg-emerald-500 text-white px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl flex items-center space-x-2 animate-in slide-in-from-top">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Operação Concluída</span>
+        </div>
+      )}
     </div>
   );
 };

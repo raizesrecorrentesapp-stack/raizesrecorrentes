@@ -41,7 +41,7 @@ export const dataService = {
     if (!isSupabaseConfigured() || !supabase) return client;
 
     const dbClient = {
-      id: client.id,
+      id: client.id.startsWith('c-') ? undefined : client.id,
       name: client.name,
       status: client.status,
       last_visit: client.lastVisit,
@@ -66,7 +66,10 @@ export const dataService = {
     if (error) throw error;
     return {
       ...client,
-      id: data.id
+      id: data.id,
+      lastVisit: data.last_visit,
+      totalSpent: Number(data.total_spent),
+      totalVisits: data.total_visits
     };
   },
 
@@ -161,9 +164,41 @@ export const dataService = {
   async addAppointment(appt: Appointment): Promise<Appointment> {
     if (!isSupabaseConfigured() || !supabase) return appt;
 
+    let finalClientId = appt.clientId;
+
+    // Se o clientId for fake (começa com 'c-'), tentamos buscar ou criar o cliente
+    if (finalClientId.startsWith('c-')) {
+      // 1. Tentar buscar cliente pelo nome
+      const { data: existingClient } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('name', appt.clientName)
+        .maybeSingle();
+
+      if (existingClient) {
+        finalClientId = existingClient.id;
+      } else {
+        // 2. Não existe, então criamos um novo
+        const { data: newClient, error: clientErr } = await supabase
+          .from('clients')
+          .insert({
+            name: appt.clientName,
+            status: 'ATIVA',
+            total_visits: 1,
+            total_spent: appt.value,
+            last_visit: appt.date
+          })
+          .select()
+          .single();
+
+        if (clientErr) throw clientErr;
+        finalClientId = newClient.id;
+      }
+    }
+
     const dbAppt = {
       id: (appt.id.startsWith('appt-') || appt.id.startsWith('a-')) ? undefined : appt.id,
-      client_id: appt.clientId.startsWith('c-') ? undefined : appt.clientId,
+      client_id: finalClientId,
       client_name: appt.clientName,
       time: appt.time,
       date: appt.date,
@@ -183,7 +218,7 @@ export const dataService = {
     return {
       ...appt,
       id: data.id,
-      clientId: data.client_id // Return actual UUID if it was newly created
+      clientId: finalClientId
     };
   },
 
