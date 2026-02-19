@@ -143,7 +143,10 @@ export const dataService = {
   async getAppointments(date?: string): Promise<Appointment[]> {
     if (!isSupabaseConfigured() || !supabase) return [];
 
-    let query = supabase.from('appointments').select('*');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    let query = supabase.from('appointments').select('*').eq('user_id', user.id);
     if (date) query = query.eq('date', date);
 
     const { data, error } = await query;
@@ -164,11 +167,13 @@ export const dataService = {
   async addAppointment(appt: Appointment): Promise<Appointment> {
     if (!isSupabaseConfigured() || !supabase) return appt;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
     let finalClientId = appt.clientId;
 
     // Se o clientId for fake (começa com 'c-'), tentamos buscar ou criar o cliente
     if (finalClientId.startsWith('c-')) {
-      // 1. Tentar buscar cliente pelo nome
       const { data: existingClient } = await supabase
         .from('clients')
         .select('id')
@@ -178,7 +183,6 @@ export const dataService = {
       if (existingClient) {
         finalClientId = existingClient.id;
       } else {
-        // 2. Não existe, então criamos um novo
         const { data: newClient, error: clientErr } = await supabase
           .from('clients')
           .insert({
@@ -186,7 +190,8 @@ export const dataService = {
             status: 'ATIVA',
             total_visits: 1,
             total_spent: appt.value,
-            last_visit: appt.date
+            last_visit: appt.date,
+            user_id: user.id
           })
           .select()
           .single();
@@ -196,13 +201,18 @@ export const dataService = {
       }
     }
 
+    // Fix: Ensure service_id is a valid UUID or undefined (ignored by DB if mock)
+    const finalServiceId = (appt.serviceId && !appt.serviceId.startsWith('s-'))
+      ? appt.serviceId
+      : undefined;
+
     const dbAppt = {
-      id: (appt.id.startsWith('appt-') || appt.id.startsWith('a-')) ? undefined : appt.id,
+      user_id: user.id,
       client_id: finalClientId,
       client_name: appt.clientName,
       time: appt.time,
       date: appt.date,
-      service_id: appt.serviceId,
+      service_id: finalServiceId,
       service_name: appt.serviceName,
       value: appt.value,
       status: appt.status
@@ -218,7 +228,8 @@ export const dataService = {
     return {
       ...appt,
       id: data.id,
-      clientId: finalClientId
+      clientId: finalClientId,
+      serviceId: data.service_id || appt.serviceId
     };
   },
 
