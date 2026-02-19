@@ -62,13 +62,37 @@ const App: React.FC = () => {
         const session = await dataService.getSession();
         if (session) {
           setIsAuthenticated(true);
+          // Carregar perfil do usuário
+          const profile = await dataService.getProfile();
+          if (profile) {
+            setUserProfile({
+              name: profile.name || 'Preta Trancista',
+              specialty: profile.specialty || 'Especialista em Braids & Nagô',
+              phone: profile.phone || '(11) 98765-4321',
+              bio: profile.bio || 'Transformando raízes em arte e faturamento recorrente.',
+              avatar: profile.avatar || 'https://picsum.photos/seed/user/200',
+              instagram: profile.instagram,
+              address: profile.address
+            });
+          }
         }
       } catch (error) {
         console.error('Error checking session:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     checkSession();
   }, []);
+
+  const handleUpdateProfile = async (updatedProfile: any) => {
+    try {
+      setUserProfile(updatedProfile);
+      await dataService.updateProfile(updatedProfile);
+    } catch (e) {
+      console.error("Profile sync error:", e);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -144,7 +168,9 @@ const App: React.FC = () => {
           }]
         };
         const savedClient = await dataService.updateClient(newClient);
-        setClients(prev => [...prev, savedClient]);
+        setClients(prev => [...prev.filter(c => c.id !== appt.clientId), savedClient]);
+        appt.clientId = savedClient.id; // Garantir que usamos a UUID real do banco
+        appt.clientName = savedClient.name;
       }
       const savedAppt = await dataService.addAppointment(appt);
       setAppointments(prev => [...prev, savedAppt]);
@@ -231,7 +257,7 @@ const App: React.FC = () => {
           isDarkMode={isDarkMode}
           onToggleTheme={() => setIsDarkMode(!isDarkMode)}
           profile={userProfile}
-          onUpdateProfile={setUserProfile}
+          onUpdateProfile={handleUpdateProfile}
           onLogout={handleLogout}
         />
       );

@@ -234,9 +234,40 @@ export const dataService = {
   },
 
   async getSession() {
-    if (!isSupabaseConfigured() || !supabase) return null;
     const { data: { session } } = await supabase.auth.getSession();
     return session;
+  },
+
+  // --- PERFIL DO USUÁRIO ---
+  async getProfile(): Promise<any> {
+    if (!isSupabaseConfigured() || !supabase) return null;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
+    return data;
+  },
+
+  async updateProfile(profile: any): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        ...profile,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
   }
 };
 
