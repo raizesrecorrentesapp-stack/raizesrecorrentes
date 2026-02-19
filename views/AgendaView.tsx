@@ -24,9 +24,10 @@ interface AgendaViewProps {
   appointments: Appointment[];
   services: Service[];
   onAddAppointment: (appt: Appointment, newClientData?: Partial<Client>) => void;
+  onUpdateStatus: (id: string, status: Appointment['status'], payStatus?: Appointment['paymentStatus']) => void;
 }
 
-const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services, onAddAppointment }) => {
+const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services, onAddAppointment, onUpdateStatus }) => {
   // Inicialização com a data real de hoje
   const now = new Date();
   const [viewMode, setViewMode] = useState<ViewMode>('day');
@@ -45,7 +46,9 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
   const [newAppt, setNewAppt] = useState({
     date: `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`,
     time: '09:00',
-    serviceId: services[0]?.id || ''
+    serviceId: services[0]?.id || '',
+    paymentStatus: 'PENDENTE' as Appointment['paymentStatus'],
+    depositValue: 0
   });
 
   // Update newAppt date when selected day changes
@@ -72,21 +75,35 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
       serviceId: service.id,
       serviceName: service.name,
       value: service.price,
-      status: 'CONFIRMADO'
+      status: newAppt.paymentStatus === 'PAGO_SINAL' ? 'PAGO_SINAL' : 'CONFIRMADO',
+      paymentStatus: newAppt.paymentStatus,
+      depositValue: newAppt.depositValue
     };
 
     onAddAppointment(appt, { name: clientSearch });
     setShowAddModal(false);
     setShowSuccessToast(true);
     setClientSearch('');
-    // Reset selection to first service for next use
+    // Reset selection for next use
     setNewAppt(prev => ({
       ...prev,
       serviceId: services[0]?.id || '',
+      paymentStatus: 'PENDENTE',
+      depositValue: 0,
       date: `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`
     }));
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
+
+  const handleUpdateStatus = async (apptId: string, newStatus: Appointment['status'], payStatus?: Appointment['paymentStatus']) => {
+    try {
+      onUpdateStatus(apptId, newStatus, payStatus);
+      setSelectedAppointment(null);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
 
   const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
   const fullMonths = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -486,6 +503,36 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
                 )}
               </div>
 
+              <div className="space-y-4 pt-2">
+                <div className="flex bg-black/5 dark:bg-white/5 p-1.5 rounded-2xl border border-black/5">
+                  <button
+                    onClick={() => setNewAppt(prev => ({ ...prev, paymentStatus: 'PENDENTE' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${newAppt.paymentStatus === 'PENDENTE' ? 'bg-white dark:bg-zinc-800 shadow-sm text-black' : 'text-black/30 dark:text-white/20'}`}
+                  >Pendente</button>
+                  <button
+                    onClick={() => setNewAppt(prev => ({ ...prev, paymentStatus: 'PAGO_SINAL' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${newAppt.paymentStatus === 'PAGO_SINAL' ? 'bg-white dark:bg-zinc-800 shadow-sm text-amber-500' : 'text-black/30 dark:text-white/20'}`}
+                  >Sinal</button>
+                  <button
+                    onClick={() => setNewAppt(prev => ({ ...prev, paymentStatus: 'PAGO_TOTAL' }))}
+                    className={`flex-1 py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${newAppt.paymentStatus === 'PAGO_TOTAL' ? 'bg-white dark:bg-zinc-800 shadow-sm text-emerald-500' : 'text-black/30 dark:text-white/20'}`}
+                  >Total</button>
+                </div>
+
+                {newAppt.paymentStatus === 'PAGO_SINAL' && (
+                  <div className="animate-in zoom-in-95 duration-200">
+                    <label className="text-[9px] font-black text-black/20 uppercase tracking-widest ml-2">Valor do Sinal (R$)</label>
+                    <input
+                      type="number"
+                      value={newAppt.depositValue}
+                      onChange={(e) => setNewAppt(prev => ({ ...prev, depositValue: Number(e.target.value) }))}
+                      placeholder="Ex: 50"
+                      className="w-full h-14 bg-black/5 border border-amber-500/20 rounded-2xl px-5 font-bold outline-none mt-2"
+                    />
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => handleConfirmAdd()}
                 disabled={!clientSearch || services.length === 0}
@@ -502,6 +549,85 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-emerald-500 text-white px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl flex items-center space-x-2 animate-in slide-in-from-top">
           <Check size={14} />
           <span>Agendamento Realizado</span>
+        </div>
+      )}
+
+      {/* MODAL DETALHE AGENDAMENTO */}
+      {selectedAppointment && (
+        <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:justify-center sm:p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedAppointment(null)}></div>
+          <div className="bg-white dark:bg-[#0a0a0a] border-t sm:border border-black/10 dark:border-white/10 w-full sm:max-w-md sm:rounded-[32px] rounded-t-[40px] p-6 pb-12 sm:p-8 space-y-8 relative z-10 animate-in slide-in-from-bottom duration-400">
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full mx-auto mb-2 shrink-0 sm:hidden"></div>
+
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-2xl font-black text-black dark:text-white tracking-tighter italic">{selectedAppointment.clientName}</h3>
+                <p className="text-[10px] font-black text-bronze uppercase tracking-[0.2em]">{selectedAppointment.serviceName}</p>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${selectedAppointment.status === 'CONCLUÍDO' ? 'bg-emerald-500/10 text-emerald-500' :
+                selectedAppointment.status === 'CANCELADO' ? 'bg-red-500/10 text-red-500' :
+                  'bg-bronze/10 text-bronze'
+                }`}>
+                {selectedAppointment.status}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl">
+                <p className="text-[8px] font-black text-black/20 dark:text-white/20 uppercase tracking-widest mb-1">Horário</p>
+                <div className="flex items-center space-x-2">
+                  <Clock size={14} className="text-bronze" />
+                  <span className="font-black text-black dark:text-white">{selectedAppointment.time}</span>
+                </div>
+              </div>
+              <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl">
+                <p className="text-[8px] font-black text-black/20 dark:text-white/20 uppercase tracking-widest mb-1">Valor</p>
+                <span className="font-black text-black dark:text-white">R$ {selectedAppointment.value}</span>
+              </div>
+            </div>
+
+            {selectedAppointment.paymentStatus !== 'PENDENTE' && (
+              <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-2xl flex justify-between items-center">
+                <div>
+                  <p className="text-[8px] font-black text-emerald-500/40 uppercase tracking-widest">Pagamento</p>
+                  <p className="text-[10px] font-black text-emerald-500">{selectedAppointment.paymentStatus}</p>
+                </div>
+                {selectedAppointment.depositValue > 0 && (
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-emerald-500/40 uppercase tracking-widest">Sinal</p>
+                    <p className="text-xs font-black text-black dark:text-white">R$ {selectedAppointment.depositValue}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {selectedAppointment.status !== 'CONCLUÍDO' && selectedAppointment.status !== 'CANCELADO' && (
+                <>
+                  <button
+                    onClick={() => handleUpdateStatus(selectedAppointment.id, 'CONCLUÍDO', 'PAGO_TOTAL')}
+                    className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2"
+                  >
+                    <Check size={18} />
+                    <span>Confirmar Execução</span>
+                  </button>
+                  <button
+                    onClick={() => handleUpdateStatus(selectedAppointment.id, 'CANCELADO')}
+                    className="w-full py-5 bg-black/5 dark:bg-white/5 text-red-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all flex items-center justify-center space-x-2"
+                  >
+                    <X size={18} />
+                    <span>Cancelar Agendamento</span>
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setSelectedAppointment(null)}
+                className="w-full py-4 text-[10px] font-black text-black/20 dark:text-white/20 uppercase tracking-widest"
+              >
+                Voltar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

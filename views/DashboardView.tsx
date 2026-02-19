@@ -29,7 +29,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, clients, appo
     const periodAppointments = appointments.filter(a => {
       const isAfterStart = a.date >= startDate;
       const isBeforeEnd = a.date <= endDate;
-      return isAfterStart && isBeforeEnd;
+      return isAfterStart && isBeforeEnd && a.status !== 'CANCELADO';
     });
 
     const revenue = periodAppointments.reduce((sum, a) => sum + (Number(a.value) || 0), 0);

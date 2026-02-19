@@ -169,6 +169,18 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateAppointmentStatus = async (apptId: string, status: Appointment['status'], paymentStatus?: Appointment['paymentStatus']) => {
+    try {
+      await dataService.updateAppointmentStatus(apptId, status, paymentStatus);
+      setAppointments(prev => prev.map(a =>
+        a.id === apptId ? { ...a, status, paymentStatus: paymentStatus || a.paymentStatus } : a
+      ));
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      alert("Erro ao atualizar status.");
+    }
+  };
+
   const handleUpdateClient = async (updatedClient: Client) => {
     try {
       const savedClient = await dataService.updateClient(updatedClient);
@@ -210,6 +222,7 @@ const App: React.FC = () => {
           appointments={appointments}
           services={services}
           onAddAppointment={handleAddAppointment}
+          onUpdateStatus={handleUpdateAppointmentStatus}
         />
       );
       case 'ativos': return <ClientsView clients={clients} onSelectClient={handleSelectClient} onNavigate={setCurrentScreen} />;

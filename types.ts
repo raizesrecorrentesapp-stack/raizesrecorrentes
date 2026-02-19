@@ -1,16 +1,16 @@
 
-export type Screen = 
-  | 'dashboard' 
-  | 'ativos' 
-  | 'agenda' 
-  | 'servicos' 
-  | 'financeiro' 
-  | 'estoque' 
-  | 'recorrencia' 
-  | 'metas' 
+export type Screen =
+  | 'dashboard'
+  | 'ativos'
+  | 'agenda'
+  | 'servicos'
+  | 'financeiro'
+  | 'estoque'
+  | 'recorrencia'
+  | 'metas'
   | 'mais'
-  | 'ajustes' 
-  | 'ai-analysis' 
+  | 'ajustes'
+  | 'ai-analysis'
   | 'client-detail'
   | 'alertas'
   | 'previsao';
@@ -94,7 +94,9 @@ export interface Appointment {
   serviceId: string;
   serviceName: string;
   value: number;
-  status: 'CONFIRMADO' | 'PENDENTE' | 'CONCLUÍDO' | 'CANCELADO';
+  status: 'CONFIRMADO' | 'PENDENTE' | 'CONCLUÍDO' | 'CANCELADO' | 'PAGO_SINAL';
+  paymentStatus: 'PENDENTE' | 'PAGO_SINAL' | 'PAGO_TOTAL';
+  depositValue?: number;
 }
 
 export interface Transaction {

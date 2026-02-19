@@ -160,7 +160,9 @@ export const dataService = {
       serviceId: d.service_id,
       serviceName: d.service_name,
       value: Number(d.value),
-      status: d.status
+      status: d.status,
+      paymentStatus: d.payment_status,
+      depositValue: Number(d.deposit_value)
     }));
   },
 
@@ -172,7 +174,6 @@ export const dataService = {
 
     let finalClientId = appt.clientId;
 
-    // Se o clientId for fake (começa com 'c-'), tentamos buscar ou criar o cliente
     if (finalClientId.startsWith('c-')) {
       const { data: existingClient } = await supabase
         .from('clients')
@@ -201,7 +202,6 @@ export const dataService = {
       }
     }
 
-    // Fix: Ensure service_id is a valid UUID or undefined (ignored by DB if mock)
     const finalServiceId = (appt.serviceId && !appt.serviceId.startsWith('s-'))
       ? appt.serviceId
       : undefined;
@@ -215,7 +215,9 @@ export const dataService = {
       service_id: finalServiceId,
       service_name: appt.serviceName,
       value: appt.value,
-      status: appt.status
+      status: appt.status,
+      payment_status: appt.paymentStatus || 'PENDENTE',
+      deposit_value: appt.depositValue || 0
     };
 
     const { data, error } = await supabase
@@ -229,8 +231,24 @@ export const dataService = {
       ...appt,
       id: data.id,
       clientId: finalClientId,
-      serviceId: data.service_id || appt.serviceId
+      serviceId: data.service_id || appt.serviceId,
+      paymentStatus: data.payment_status,
+      depositValue: Number(data.deposit_value)
     };
+  },
+
+  async updateAppointmentStatus(id: string, status: Appointment['status'], paymentStatus?: Appointment['paymentStatus']): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) return;
+
+    const updates: any = { status };
+    if (paymentStatus) updates.payment_status = paymentStatus;
+
+    const { error } = await supabase
+      .from('appointments')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) throw error;
   },
 
   async deleteAppointment(id: string): Promise<void> {
