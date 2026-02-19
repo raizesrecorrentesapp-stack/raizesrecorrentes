@@ -242,7 +242,7 @@ const App: React.FC = () => {
       );
       case 'mais': return <MoreView onNavigate={setCurrentScreen} onLogout={handleLogout} />;
       case 'recorrencia': return <RecurrenceView clients={clients} studioName={userProfile.name} />;
-      case 'metas': return <GoalsView />;
+      case 'metas': return <GoalsView appointments={appointments} />;
       case 'servicos': return (
         <ServicesView
           onNavigate={setCurrentScreen}

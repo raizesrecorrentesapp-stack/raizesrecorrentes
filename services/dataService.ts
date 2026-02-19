@@ -1,6 +1,6 @@
 
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { Client, Service, Appointment } from '../types';
+import { Client, Service, Appointment, Material } from '../types';
 import { GoogleGenAI } from "@google/genai";
 
 // Guideline: Always use a named parameter for the API key and use process.env.API_KEY directly.
@@ -162,8 +162,8 @@ export const dataService = {
     if (!isSupabaseConfigured() || !supabase) return appt;
 
     const dbAppt = {
-      id: appt.id.startsWith('appt-') ? undefined : appt.id, // Generate new if mock ID
-      client_id: appt.clientId,
+      id: (appt.id.startsWith('appt-') || appt.id.startsWith('a-')) ? undefined : appt.id,
+      client_id: appt.clientId.startsWith('c-') ? undefined : appt.clientId,
       client_name: appt.clientName,
       time: appt.time,
       date: appt.date,
@@ -182,13 +182,86 @@ export const dataService = {
     if (error) throw error;
     return {
       ...appt,
-      id: data.id
+      id: data.id,
+      clientId: data.client_id // Return actual UUID if it was newly created
     };
   },
 
   async deleteAppointment(id: string): Promise<void> {
     if (!isSupabaseConfigured() || !supabase) return;
     const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- ESTOQUE ---
+  async getInventory(): Promise<Material[]> {
+    if (!isSupabaseConfigured() || !supabase) return [];
+    const { data, error } = await supabase.from('inventory').select('*').order('name');
+    if (error) throw error;
+    return (data || []).map(d => ({
+      id: d.id,
+      name: d.name,
+      brand: d.brand,
+      quantity: Number(d.quantity),
+      minQuantity: Number(d.min_quantity),
+      cost: Number(d.cost),
+      category: d.category,
+      unit: d.unit,
+      lastMovement: d.last_movement
+    }));
+  },
+
+  async updateInventory(material: Material): Promise<Material> {
+    if (!isSupabaseConfigured() || !supabase) return material;
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const dbMaterial = {
+      id: material.id.includes('-') && !material.id.startsWith('m-') ? material.id : undefined,
+      user_id: user?.id,
+      name: material.name,
+      brand: material.brand,
+      quantity: material.quantity,
+      min_quantity: material.minQuantity,
+      cost: material.cost,
+      category: material.category,
+      unit: material.unit,
+      last_movement: material.lastMovement
+    };
+
+    const { data, error } = await supabase.from('inventory').upsert(dbMaterial).select().single();
+    if (error) throw error;
+    return { ...material, id: data.id };
+  },
+
+  async deleteInventory(id: string): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) return;
+    const { error } = await supabase.from('inventory').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // --- METAS ---
+  async getGoals(): Promise<any> {
+    if (!isSupabaseConfigured() || !supabase) return null;
+    const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const { data, error } = await supabase.from('goals').select('*').eq('month', month).single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  },
+
+  async updateGoals(goals: any): Promise<void> {
+    if (!isSupabaseConfigured() || !supabase) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    const month = new Date().toISOString().slice(0, 7);
+
+    const { error } = await supabase.from('goals').upsert({
+      user_id: user?.id,
+      month,
+      revenue_goal: goals.revenue,
+      working_days: goals.workingDays,
+      hours_per_day: goals.hoursPerDay,
+      current_revenue: goals.currentRevenue
+    }, { onConflict: 'user_id,month' });
+
     if (error) throw error;
   },
 

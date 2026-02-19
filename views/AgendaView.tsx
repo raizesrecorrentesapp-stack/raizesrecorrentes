@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MOCK_SERVICES } from '../constants';
 import { Appointment, Client, Service } from '../types';
 import {
@@ -43,10 +43,18 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
 
   // Fix: Added missing state for new appointment
   const [newAppt, setNewAppt] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`,
     time: '09:00',
     serviceId: services[0]?.id || ''
   });
+
+  // Update newAppt date when selected day changes
+  useEffect(() => {
+    setNewAppt(prev => ({
+      ...prev,
+      date: `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`
+    }));
+  }, [selectedDay, selectedMonth, selectedYear]);
 
   // Fix: Added missing handleConfirmAdd function
   const handleConfirmAdd = () => {
@@ -72,7 +80,11 @@ const AgendaView: React.FC<AgendaViewProps> = ({ clients, appointments, services
     setShowSuccessToast(true);
     setClientSearch('');
     // Reset selection to first service for next use
-    setNewAppt(prev => ({ ...prev, serviceId: services[0]?.id || '' }));
+    setNewAppt(prev => ({
+      ...prev,
+      serviceId: services[0]?.id || '',
+      date: `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`
+    }));
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 

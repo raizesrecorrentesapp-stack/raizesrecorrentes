@@ -8,11 +8,18 @@ import {
   DollarSign, X, Check, ArrowRight, Sparkles,
   Award, Heart, Users
 } from 'lucide-react';
+import { dataService } from '../services/dataService';
+import { Appointment } from '../types';
 
-const GoalsView: React.FC = () => {
+interface GoalsViewProps {
+  appointments?: Appointment[];
+}
+
+const GoalsView: React.FC<GoalsViewProps> = ({ appointments = [] }) => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Estado das Metas
   const [monthlyGoal, setMonthlyGoal] = useState({
@@ -23,17 +30,38 @@ const GoalsView: React.FC = () => {
     currentRevenue: 0,
   });
 
-  // Estado do Simulador
-  const [simValues, setSimValues] = useState({
-    increaseTicket: 0,
-    addDays: 0,
-    focusProfit: false
-  });
+  useEffect(() => {
+    loadGoals();
+  }, []);
+
+  const loadGoals = async () => {
+    try {
+      const data = await dataService.getGoals();
+      if (data) {
+        setMonthlyGoal({
+          revenue: Number(data.revenue_goal),
+          profit: 0,
+          workingDays: Number(data.working_days),
+          hours_per_day: Number(data.hours_per_day),
+          currentRevenue: Number(data.current_revenue)
+        });
+      }
+    } catch (e) {
+      console.error("Error loading goals:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Cálculos Automáticos
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonthRevenue = appointments
+    .filter(a => a.date.startsWith(currentMonth))
+    .reduce((acc, a) => acc + a.value, 0);
+
+  const progress = (currentMonthRevenue / monthlyGoal.revenue) * 100;
+  const missingRevenue = Math.max(0, monthlyGoal.revenue - currentMonthRevenue);
   const ticketMedioAtual = 350;
-  const progress = (monthlyGoal.currentRevenue / monthlyGoal.revenue) * 100;
-  const missingRevenue = monthlyGoal.revenue - monthlyGoal.currentRevenue;
   const appointmentsNeeded = Math.ceil(missingRevenue / ticketMedioAtual);
 
   // Cálculo do Simulador
@@ -47,9 +75,17 @@ const GoalsView: React.FC = () => {
     setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  const handleSaveConfig = () => {
-    setIsConfigModalOpen(false);
-    triggerSuccess();
+  const handleSaveConfig = async () => {
+    try {
+      await dataService.updateGoals({
+        ...monthlyGoal,
+        currentRevenue: currentMonthRevenue
+      });
+      setIsConfigModalOpen(false);
+      triggerSuccess();
+    } catch (e) {
+      console.error("Error saving goals:", e);
+    }
   };
 
   return (
@@ -83,7 +119,7 @@ const GoalsView: React.FC = () => {
 
         <div className="text-center space-y-2 relative z-10">
           <p className="text-[10px] font-black text-[#C69372] uppercase tracking-[0.4em]">Faturamento Mensal</p>
-          <h3 className="text-6xl font-black text-white tracking-tighter">R$ {monthlyGoal.currentRevenue.toLocaleString()}</h3>
+          <h3 className="text-6xl font-black text-white tracking-tighter">R$ {currentMonthRevenue.toLocaleString()}</h3>
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mt-2">
             <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Alvo: R$ {monthlyGoal.revenue.toLocaleString()}</span>
           </div>

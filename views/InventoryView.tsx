@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Material, Service } from '../types';
-import { MOCK_MATERIALS, MOCK_SERVICES } from '../constants';
+import { MOCK_SERVICES } from '../constants';
+import { dataService } from '../services/dataService';
 import {
   Package, Plus, AlertTriangle, TrendingDown,
   DollarSign, Check, ChevronRight, Sparkles,
@@ -10,24 +11,67 @@ import {
 } from 'lucide-react';
 
 const InventoryView: React.FC = () => {
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [newMaterialInput, setNewMaterialInput] = useState<Partial<Material>>({
+    name: '', brand: '', category: 'Fibra', cost: 0, quantity: 0, minQuantity: 0, unit: 'unidade'
+  });
+
+  React.useEffect(() => {
+    loadInventory();
+  }, []);
+
+  const loadInventory = async () => {
+    try {
+      const data = await dataService.getInventory();
+      setMaterials(data);
+    } catch (e) {
+      console.error("Error loading inventory:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Cálculos de Negócio
-  const totalGasto = MOCK_MATERIALS.reduce((acc, m) => acc + (m.cost * m.quantity), 0);
+  const totalGasto = materials.reduce((acc, m) => acc + (m.cost * m.quantity), 0);
   const faturamentoReal = 0; // Isso deveria vir de props se quisermos ser precisos
   const impactPercent = faturamentoReal > 0 ? Math.round((totalGasto / faturamentoReal) * 100) : 0;
   const isHealthy = impactPercent < 15;
 
-  const criticalItems = MOCK_MATERIALS.filter(m => m.quantity <= m.minQuantity);
-  const slowMovingItems = MOCK_MATERIALS.filter(m => m.category === 'Cola'); // Exemplo de regra
+  const criticalItems = materials.filter(m => m.quantity <= m.minQuantity);
+  const slowMovingItems = materials.filter(m => m.category === 'Cola'); // Exemplo de regra
 
-  const filteredMaterials = MOCK_MATERIALS.filter(m =>
+  const filteredMaterials = materials.filter(m =>
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.brand.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAddMaterial = async () => {
+    if (!newMaterialInput.name) return;
+    try {
+      const materialToSave: Material = {
+        id: `m-${Date.now()}`,
+        name: newMaterialInput.name || '',
+        brand: newMaterialInput.brand || '',
+        quantity: Number(newMaterialInput.quantity) || 0,
+        minQuantity: Number(newMaterialInput.minQuantity) || 0,
+        cost: Number(newMaterialInput.cost) || 0,
+        category: (newMaterialInput.category as any) || 'Fibra',
+        unit: (newMaterialInput.unit as any) || 'unidade',
+      };
+      await dataService.updateInventory(materialToSave);
+      await loadInventory();
+      triggerToast();
+      setIsAddModalOpen(false);
+      setNewMaterialInput({ name: '', brand: '', category: 'Fibra', cost: 0, quantity: 0, minQuantity: 0, unit: 'unidade' });
+    } catch (e) {
+      console.error("Error saving material:", e);
+    }
+  };
 
   const triggerToast = () => {
     setShowSuccessToast(true);
@@ -224,15 +268,15 @@ const InventoryView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 space-y-1.5">
                     <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1">Nome do Item</label>
-                    <input type="text" placeholder="Ex: Jumbo Premium" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold outline-none" />
+                    <input type="text" value={newMaterialInput.name} onChange={e => setNewMaterialInput({ ...newMaterialInput, name: e.target.value })} placeholder="Ex: Jumbo Premium" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold outline-none" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1">Marca</label>
-                    <input type="text" placeholder="Ex: Super Star" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold outline-none" />
+                    <input type="text" value={newMaterialInput.brand} onChange={e => setNewMaterialInput({ ...newMaterialInput, brand: e.target.value })} placeholder="Ex: Super Star" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold outline-none" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1">Categoria</label>
-                    <select className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold outline-none appearance-none">
+                    <select value={newMaterialInput.category} onChange={e => setNewMaterialInput({ ...newMaterialInput, category: e.target.value as any })} className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-bold outline-none appearance-none">
                       <option>Fibra</option>
                       <option>Linha</option>
                       <option>Acessório</option>
@@ -241,17 +285,17 @@ const InventoryView: React.FC = () => {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1">Preço Unitário</label>
-                    <input type="number" placeholder="0.00" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-emerald-500 font-black outline-none" />
+                    <input type="number" value={newMaterialInput.cost} onChange={e => setNewMaterialInput({ ...newMaterialInput, cost: Number(e.target.value) })} placeholder="0.00" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-emerald-500 font-black outline-none" />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1">Quantidade Atual</label>
-                    <input type="number" placeholder="0" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-black outline-none" />
+                    <input type="number" value={newMaterialInput.quantity} onChange={e => setNewMaterialInput({ ...newMaterialInput, quantity: Number(e.target.value) })} placeholder="0" className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-white font-black outline-none" />
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={() => { triggerToast(); setIsAddModalOpen(false); }}
+                onClick={handleAddMaterial}
                 className="w-full py-5 bg-bronze text-white font-black text-sm rounded-2xl shadow-xl active:scale-[0.98] transition-all uppercase tracking-[0.3em] flex items-center justify-center space-x-3"
               >
                 <Check size={20} />
