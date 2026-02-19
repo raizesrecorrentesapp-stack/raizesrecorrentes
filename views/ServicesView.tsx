@@ -8,7 +8,7 @@ import {
   Award, Search, Filter, ChevronRight,
   BarChart4, X, AlertCircle, Info, Calculator,
   History, Scissors, Check, Save, Sparkles,
-  ArrowUpDown, Trophy, Timer, Trash2, Loader2
+  ArrowUpDown, Trophy, Timer, Trash2, Loader2, AlertTriangle
 } from 'lucide-react';
 
 interface ServicesViewProps {
